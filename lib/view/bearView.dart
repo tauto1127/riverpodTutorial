@@ -2,14 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter/src/widgets/framework.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:riverpod_tutorial/viewModel/KumaVM.dart';
-
+///こっちのコードでは昨日のと違って　ボタンが押されたら，テキストフィールドの値をstateに入れるようにしてます
 class BearPage extends ConsumerWidget{
   int left = 100;
-  int right = 100;
-  late WidgetRef _ref;
+  int right = 100; //textfieldの値を一時的に保存
+  late WidgetRef _ref; //気にしなくていい
+
+  BearPage({super.key});
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // TODO: implement build
     _ref = ref;
     return Scaffold(
       appBar: AppBar(),
@@ -17,25 +18,25 @@ class BearPage extends ConsumerWidget{
         child: Column(
           children: [
             _numberFields(),
-            SizedBox(height: 30,),
+            const SizedBox(height: 30,),
             TextButton(
               style: FilledButton.styleFrom(
-                padding: EdgeInsets.symmetric(horizontal: 40, vertical: 15),
+                padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 15),
                 backgroundColor: Colors.blue[100],
                 foregroundColor: Colors.blueAccent
               ),
               onPressed: () {
                 ref.read(kumaVMProvider.notifier).setKumaState(right, left);
-                ref.read(kumaVMProvider.notifier).getBearImg(left, right);
+                ref.read(kumaVMProvider.notifier).getBearImg();
               },
               child: const Text("put"),
             ),
-            Consumer(
+            Consumer( //ConsumerWidgetの中にConsumer入れないので，このConsumerは必要ない
               builder: (context, ref, child) {
                 return ref.watch(kumaVMProvider).when(
-                  data: (value) => Text(value.width.toString() + ":" + value.height.toString()), 
-                  error: (_,__) => Text("error"), 
-                  loading: () => Text("loading")
+                  data: (value) => Text("${value.width}:${value.height}"), 
+                  error: (_,__) => const Text("error"), 
+                  loading: () => const Text("loading")
                 );
               },
             ),
@@ -43,10 +44,13 @@ class BearPage extends ConsumerWidget{
               builder: (context, ref, child) {
                 return ref.watch(kumaVMProvider).when(
                   data: (value) {
-                    if (value.image == null) return Text("まだ画像がありません");
-                    else return Image.memory(value.image!);
-                  }, error: (_,__) => Text("errorがおきました"), 
-                  loading: () => CircularProgressIndicator(), 
+                    if (value.image == null) {
+                      return const Text("まだ画像がありません");
+                    } else {
+                      return Image.memory(value.image!); ///Image.memory()で画像を表示してます
+                    }
+                  }, error: (_,__) => const Text("errorがおきました"), 
+                  loading: () => const CircularProgressIndicator(),  //ローディング中のくるくるするウィジェット
                 );
               },
             )
@@ -56,7 +60,7 @@ class BearPage extends ConsumerWidget{
     );
   }
 
-  Widget _numberFields() {
+  Widget _numberFields() { 
     return 
     Column(
       children: [
@@ -64,13 +68,16 @@ class BearPage extends ConsumerWidget{
           builder: (context, ref, child) {
             return ref.watch(kumaVMProvider).maybeWhen(
               data: (value) {
-              if(value.errorText != null) return Text(
+              if(value.errorText != null) {
+                return Text(
                   value.errorText!,
-                  style: TextStyle(color: Colors.red),
+                  style: const TextStyle(color: Colors.red),
                 );
-              else return Text("");
+              } else {
+                return const Text("");
+              }
             },
-              orElse: () => Text("")
+              orElse: () => const Text("")
             );
           },
           ),
@@ -87,16 +94,18 @@ class BearPage extends ConsumerWidget{
       ],
     );
   }
-  Widget _numberField(void Function(String value) assign, String label){
+  Widget _numberField(void Function(String value) assign, String label){//Widgetを返す関数を作って，コードを見やすくしたり，コードの重複をなくしてる
+    //return Consumer にすれば，_refを使う必要はない
     return TextField(
       decoration: InputDecoration(
-        border: OutlineInputBorder(),
+        border: const OutlineInputBorder(),
         labelText: label,
       ),
       onChanged: (String value) { 
         //left = int.parse(value);
-        if(int.tryParse(value) == null) _ref.read(kumaVMProvider.notifier).setErrorString("数字を入力してください");
-        else {
+        if(int.tryParse(value) == null) {
+          _ref.read(kumaVMProvider.notifier).setErrorString("数字を入力してください");
+        } else {
           assign(value);
           _ref.read(kumaVMProvider.notifier).setErrorString("");
         }
